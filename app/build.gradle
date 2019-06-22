@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 28
@@ -31,6 +32,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-maps:16.1.0'
     implementation 'com.google.android.gms:play-services-location:16.0.0'
     implementation 'android.arch.lifecycle:extensions:1.1.1'
+    implementation 'com.google.firebase:firebase-database:16.0.4'
     annotationProcessor "android.arch.lifecycle:compiler:1.1.1"
     // dexter runtime permissions
     implementation 'com.karumi:dexter:4.2.0'

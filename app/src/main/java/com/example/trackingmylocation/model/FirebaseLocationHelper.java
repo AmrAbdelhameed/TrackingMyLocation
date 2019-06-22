@@ -1,7 +1,6 @@
 package com.example.trackingmylocation.model;
 
 import android.annotation.SuppressLint;
-import android.arch.lifecycle.LiveData;
 import android.content.Context;
 import android.location.Location;
 import android.os.Looper;
@@ -23,15 +22,17 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
-import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class LocationHelper extends LiveData<Location> {
-    private static final String TAG = "LocationHelper";
+public class FirebaseLocationHelper {
+    private static final String TAG = "FirebaseLocationHelper";
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 5000;
-    private static LocationHelper instance;
+    private static FirebaseLocationHelper instance;
     private final Context context;
     // bunch of location related apis
     private FusedLocationProviderClient mFusedLocationClient;
@@ -40,16 +41,18 @@ public class LocationHelper extends LiveData<Location> {
     private LocationSettingsRequest mLocationSettingsRequest;
     private LocationCallback mLocationCallback;
     private Location mCurrentLocation;
-    private String mLastUpdateTime;
+    private String lastUpdateTime;
+    private DatabaseReference mDatabase;
 
-    private LocationHelper(Context context) {
+    private FirebaseLocationHelper(Context context) {
         this.context = context;
+        mDatabase = FirebaseDatabase.getInstance().getReference();
         buildGoogleApiClient(context);
     }
 
-    public static LocationHelper getInstance(Context context) {
+    public static FirebaseLocationHelper getInstance(Context context) {
         if (instance == null)
-            instance = new LocationHelper(context);
+            instance = new FirebaseLocationHelper(context);
         return instance;
     }
 
@@ -64,7 +67,10 @@ public class LocationHelper extends LiveData<Location> {
                 // location is received
                 Log.e(TAG, "onLocationResult: " + locationResult);
                 mCurrentLocation = locationResult.getLastLocation();
-                mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+
+                @SuppressLint("SimpleDateFormat")
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+                lastUpdateTime = simpleDateFormat.format(new Date());
 
                 updateLocationUI();
             }
@@ -83,8 +89,13 @@ public class LocationHelper extends LiveData<Location> {
     }
 
     private void updateLocationUI() {
-        if (mCurrentLocation != null)
-            setValue(mCurrentLocation);
+        if (mCurrentLocation != null) {
+            LocationModel locationModel = new LocationModel();
+            locationModel.setLatitude(mCurrentLocation.getLatitude());
+            locationModel.setLongitude(mCurrentLocation.getLongitude());
+            locationModel.setLastUpdateTime(lastUpdateTime);
+            mDatabase.child("users").child("1").setValue(locationModel);
+        }
     }
 
     private void startLocationUpdates() {
